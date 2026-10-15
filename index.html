@@ -7329,7 +7329,7 @@
 
         function rebuildAfterHeading(pattern, rows, headers) {
           const heading = [
-            ...document.querySelectorAll("#fundamentos .book-heading"),
+            ...document.querySelectorAll("#apresentacao .book-heading"),
           ].find((h) => pattern.test(h.textContent));
           if (!heading) return;
           let n = heading.nextElementSibling;
