@@ -1171,6 +1171,59 @@
         orphans: 3;
         widows: 3;
       }
+      .audio-preview {
+        width: min(100%, 650px);
+        margin: 24px auto 20px;
+        padding: 17px 18px 18px;
+        border: 1px solid rgba(214, 169, 40, .42);
+        border-radius: 18px;
+        background: linear-gradient(135deg, rgba(255,255,255,.11), rgba(255,255,255,.045));
+        box-shadow: 0 16px 40px rgba(0, 0, 0, .25);
+        text-align: left;
+        backdrop-filter: blur(10px);
+      }
+      .audio-preview__head {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 13px;
+      }
+      .audio-preview__icon {
+        display: grid;
+        place-items: center;
+        flex: 0 0 42px;
+        width: 42px;
+        height: 42px;
+        border-radius: 50%;
+        background: #d6a928;
+        color: #071b39;
+        font-size: 1.15rem;
+        box-shadow: 0 6px 18px rgba(214, 169, 40, .28);
+      }
+      .audio-preview__copy strong {
+        display: block;
+        color: #fff;
+        font-size: .96rem;
+      }
+      .audio-preview__copy small {
+        display: block;
+        margin-top: 2px;
+        color: rgba(255,255,255,.72);
+        font-size: .76rem;
+      }
+      .audio-preview audio {
+        display: block;
+        width: 100%;
+        height: 42px;
+        accent-color: #d6a928;
+      }
+      .audio-preview__note {
+        display: block;
+        margin-top: 9px;
+        color: rgba(255,255,255,.62);
+        font-size: .7rem;
+        text-align: center;
+      }
       @media (max-width: 650px) {
         .toc-grid {
           grid-template-columns: 1fr;
@@ -1230,6 +1283,20 @@
             53 métodos avaliados por evidência, retenção, aprendizagem ativa,
             aplicação em questões, eficiência e utilidade para concursos.
           </p>
+          <div class="audio-preview" aria-label="Apresentação em áudio">
+            <div class="audio-preview__head">
+              <span class="audio-preview__icon" aria-hidden="true">▶</span>
+              <span class="audio-preview__copy">
+                <strong>Ouça a apresentação do e-book</strong>
+                <small>Narração por IA • 1 minuto e 16 segundos</small>
+              </span>
+            </div>
+            <audio controls preload="metadata">
+              <source src="assets/audio/apresentacao-metodos-de-estudo.mp3" type="audio/mpeg" />
+              Seu navegador não oferece suporte ao player de áudio.
+            </audio>
+            <small class="audio-preview__note">Você pode ouvir enquanto acompanha a leitura.</small>
+          </div>
           <div class="by">Prof. Lucas MPC</div>
           <a class="start" href="#apresentacao">Começar a leitura →</a>
         </div>
