@@ -789,6 +789,31 @@
       .rebuilt-table tr:nth-child(even) td {
         background: #f7f9fc;
       }
+    .rebuilt-table .band-pill {
+      display: inline-grid;
+      place-items: center;
+      min-width: 30px;
+      height: 27px;
+      padding: 0 8px;
+      border-radius: 999px;
+      color: #fff;
+      font-size: 0.75rem;
+      font-weight: 900;
+    }
+    .band-pill.s { background: #9a7200; }
+    .band-pill.a { background: #116fc0; }
+    .band-pill.b { background: #137a4d; }
+    .band-pill.c { background: #b43b3b; }
+    .table-title {
+      margin: 2.2rem 0 0.7rem;
+      color: #0a2a55;
+      font: 700 1.28rem/1.3 Georgia, serif;
+    }
+    .table-note {
+      margin: -0.5rem 0 1rem !important;
+      color: #647087 !important;
+      font-size: 0.84rem;
+    }
       .source-details {
         margin: 1.6rem 0;
         border: 1px solid #dce3ec;
@@ -849,6 +874,7 @@
         .rebuilt-table {
           display: block;
           overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
         }
         .tools {
           top: 10px;
@@ -7602,6 +7628,231 @@
             p.replaceWith(fragment);
           });
         }
+
+        // Reconstrói os quadros do capítulo introdutório que perderam colunas na conversão.
+        const introBook = document.querySelector("#apresentacao .book-content");
+        const makeTable = (headers, rows) => {
+          const table = document.createElement("table");
+          table.className = "rebuilt-table";
+          const head = document.createElement("thead");
+          const headRow = document.createElement("tr");
+          headers.forEach((label) => {
+            const th = document.createElement("th");
+            th.textContent = label;
+            headRow.appendChild(th);
+          });
+          head.appendChild(headRow);
+          const body = document.createElement("tbody");
+          rows.forEach((row) => {
+            const tr = document.createElement("tr");
+            row.forEach((value, index) => {
+              const td = document.createElement("td");
+              if (headers[index] === "Faixa") {
+                const band = document.createElement("span");
+                band.className = "band-pill " + value.toLowerCase();
+                band.textContent = value;
+                td.appendChild(band);
+              } else {
+                td.textContent = value;
+              }
+              tr.appendChild(td);
+            });
+            body.appendChild(tr);
+          });
+          table.append(head, body);
+          return table;
+        };
+
+        const rebuildBrokenTable = ({ start, marker, stop, title, note, headers, rows }) => {
+          if (!introBook) return;
+          const startNode = [...introBook.children].find(
+            (el) => el.matches("p") && el.textContent.includes(start),
+          );
+          if (!startNode) return;
+          const text = startNode.textContent.trim();
+          const cut = text.indexOf(marker);
+          if (cut < 0) return;
+          let prefix = text.slice(0, cut).trim();
+          if (title && prefix.toLowerCase().startsWith(title.toLowerCase())) {
+            prefix = prefix.slice(title.length).trim();
+          }
+          let cursor = startNode.nextElementSibling;
+          const fragments = [];
+          while (cursor && !cursor.textContent.trim().startsWith(stop)) {
+            fragments.push(cursor);
+            cursor = cursor.nextElementSibling;
+          }
+          const anchor = document.createElement("span");
+          startNode.before(anchor);
+          startNode.remove();
+          fragments.forEach((el) => el.remove());
+          const nodes = [];
+          if (title) {
+            const h = document.createElement("h3");
+            h.className = "table-title";
+            h.textContent = title;
+            nodes.push(h);
+          }
+          if (prefix) {
+            const p = document.createElement("p");
+            p.textContent = prefix;
+            nodes.push(p);
+          }
+          if (note) {
+            const p = document.createElement("p");
+            p.className = "table-note";
+            p.textContent = note;
+            nodes.push(p);
+          }
+          nodes.push(makeTable(headers, rows));
+          anchor.replaceWith(...nodes);
+        };
+
+        rebuildBrokenTable({
+          start: "Reconhecimento tem valor",
+          marker: "Durante o estudo",
+          stop: "Desempenho momentâneo",
+          headers: ["Durante o estudo", "O que parece", "Teste mais confiável"],
+          rows: [
+            ["Reler", "“Eu lembro disso.”", "Fechar e explicar"],
+            ["Assistir à resolução", "“Eu saberia fazer.”", "Resolver sem o modelo"],
+            ["Ver a alternativa correta", "“Era exatamente essa.”", "Justificar antes do gabarito"],
+            ["Rever o resumo", "“O assunto está claro.”", "Reconstruir os pontos principais"],
+          ],
+        });
+
+        rebuildBrokenTable({
+          start: "Neste livro, a palavra método",
+          marker: "Categoria Método de aprendizagem",
+          stop: "Uma ferramenta de organização",
+          headers: ["Categoria", "Função principal", "Exemplos"],
+          rows: [
+            ["Método de aprendizagem", "Produzir processamento, recuperação ou aplicação", "Prática de recuperação, autoexplicação, elaboração"],
+            ["Método de revisão", "Retomar e fortalecer conhecimentos ao longo do tempo", "Prática espaçada, revisão cumulativa, Leitner"],
+            ["Ferramenta de organização", "Distribuir tempo, tarefas e prioridades", "Ciclo de estudos, cronograma, timeboxing, Pomodoro"],
+            ["Formato de conteúdo", "Apresentar a matéria ao estudante", "Livro, PDF, videoaula, aula presencial, áudio"],
+            ["Condição de estudo", "Influenciar atenção, energia e ambiente", "Sono, pausas, silêncio, música, local"],
+            ["Prática prejudicial", "Ocupar tempo ou reduzir aprendizagem quando domina o sistema", "Multitarefa, maratona sem descanso, transcrição integral"],
+          ],
+        });
+
+        rebuildBrokenTable({
+          start: "Os sete critérios",
+          marker: "Critério",
+          stop: "1. Evidência científica",
+          title: "Os sete critérios",
+          headers: ["Critério", "Peso", "Pergunta orientadora"],
+          rows: [
+            ["Evidência científica", "20%", "Há suporte consistente em pesquisas e sínteses relevantes?"],
+            ["Retenção de longo prazo", "20%", "O conhecimento permanece disponível depois de um intervalo?"],
+            ["Aprendizagem ativa", "15%", "A técnica exige produzir, decidir, recuperar ou explicar?"],
+            ["Aplicação em questões", "15%", "Ajuda a reconhecer demandas e executar respostas?"],
+            ["Eficiência de tempo", "10%", "O benefício justifica o tempo e o esforço empregados?"],
+            ["Facilidade de implementação", "5%", "É possível aplicar corretamente sem estrutura excessiva?"],
+            ["Utilidade para concursos", "15%", "Adapta-se ao volume, à revisão e ao padrão de cobrança?"],
+          ],
+        });
+
+        rebuildBrokenTable({
+          start: "As quatro faixas de prioridade",
+          marker: "Faixa",
+          stop: "Faixa C não significa",
+          title: "As quatro faixas de prioridade",
+          headers: ["Faixa", "Significado editorial", "Decisão prática"],
+          rows: [
+            ["S", "Central — alto valor geral; deve ocupar o núcleo do sistema", "Aprender, testar e manter"],
+            ["A", "Muito útil — forte complemento ou excelente em condições definidas", "Selecionar conforme matéria e fase"],
+            ["B", "Contextual — depende bastante da finalidade e da execução", "Usar com objetivo específico"],
+            ["C", "Fraca isoladamente — gera pouca aprendizagem quando domina a rotina", "Reduzir, transformar ou combinar"],
+          ],
+        });
+
+        const ranking = [
+          ["1", "Prática de recuperação", "9,6", "S"], ["2", "Questões com correção e análise", "9,5", "S"],
+          ["3", "Prática espaçada", "9,3", "S"], ["4", "Revisão baseada em erros", "9,2", "S"],
+          ["5", "Simulados com análise", "9,0", "S"], ["6", "Intercalação", "8,9", "S"],
+          ["7", "Reaprendizagem sucessiva", "8,8", "S"], ["8", "Autoexplicação", "8,7", "S"],
+          ["9", "Prática deliberada", "8,6", "S"], ["10", "Estudo reverso", "8,5", "A"],
+          ["11", "Revisão cumulativa", "8,5", "A"], ["12", "Recordação livre", "8,4", "A"],
+          ["13", "Método da folha em branco", "8,4", "A"], ["14", "Alternância teoria–exercícios", "8,3", "A"],
+          ["15", "Flashcards", "8,2", "A"], ["16", "Sistema Leitner", "8,1", "A"],
+          ["17", "Refação estratégica", "8,1", "A"], ["18", "Exemplos resolvidos", "8,0", "A"],
+          ["19", "Elaboração", "8,0", "A"], ["20", "Técnica Feynman", "7,9", "A"],
+          ["21", "Ensinar outra pessoa", "7,9", "A"], ["22", "Exemplos concretos", "7,8", "A"],
+          ["23", "Codificação dupla", "7,8", "A"], ["24", "Pré-teste", "7,7", "A"],
+          ["25", "Perguntas criadas pelo aluno", "7,7", "A"], ["26", "Leitura ativa", "7,5", "B"],
+          ["27", "Resumo de memória", "7,4", "B"], ["28", "Mapas conceituais", "7,3", "B"],
+          ["29", "Mnemônicos", "7,2", "B"], ["30", "Palácio da memória", "7,0", "B"],
+          ["31", "Método Cornell", "6,9", "B"], ["32", "SQ3R, PQ4R, Robinson e EPL2R", "6,9", "B"],
+          ["33", "Videoaulas ativas", "6,8", "B"], ["34", "Aulas ao vivo interativas", "6,7", "B"],
+          ["35", "Mapas mentais", "6,6", "B"], ["36", "Dupla de estudos", "6,5", "B"],
+          ["37", "Grupo estruturado", "6,4", "B"], ["38", "Gravar a própria explicação", "6,3", "B"],
+          ["39", "Associação com imagens", "6,2", "B"], ["40", "Histórias e associações", "6,1", "B"],
+          ["41", "Releitura passiva", "4,9", "C"], ["42", "Grifo sem revisão ativa", "4,7", "C"],
+          ["43", "Fichamentos excessivos", "4,5", "C"], ["44", "Resumos copiados", "4,3", "C"],
+          ["45", "Áudio passivo", "4,0", "C"], ["46", "Vídeos sem prática", "3,8", "C"],
+          ["47", "Estudar apenas por apostilas", "3,6", "C"], ["48", "Transcrição integral", "3,4", "C"],
+          ["49", "Questões sem análise de erros", "3,2", "C"], ["50", "Maratonas sem descanso", "2,9", "C"],
+          ["51", "Decorar respostas sem compreender", "2,6", "C"], ["52", "Estudo de última hora", "2,4", "C"],
+          ["53", "Multitarefa", "1,8", "C"],
+        ];
+        rebuildBrokenTable({
+          start: "O ranking geral",
+          marker: "#",
+          stop: "Como interpretar posições",
+          title: "O ranking geral",
+          note: "As posições orientam prioridade geral; diferenças pequenas de nota indicam proximidade.",
+          headers: ["#", "Técnica", "Nota", "Faixa"],
+          rows: ranking,
+        });
+
+        rebuildBrokenTable({
+          start: "Por que não existe um método universal",
+          marker: "Moderador",
+          stop: "Esses moderadores não anulam",
+          title: "Por que não existe um método universal",
+          headers: ["Moderador", "Como pode mudar a escolha"],
+          rows: [
+            ["Conhecimento prévio", "Iniciantes precisam de mais orientação; avançados se beneficiam de menos apoio."],
+            ["Natureza do conteúdo", "Fatos, conceitos, procedimentos e redação exigem combinações diferentes."],
+            ["Formato da prova", "Questões objetivas, discursivas e práticas cobram recuperações distintas."],
+            ["Intervalo até o teste", "Quanto maior o intervalo, mais importantes tendem a ser espaçamento e retomadas."],
+            ["Qualidade do feedback", "Correção rápida, explicativa e acionável aumenta o valor da prática."],
+          ],
+        });
+
+        rebuildBrokenTable({
+          start: "Ferramentas importantes que ficaram fora da disputa",
+          marker: "Recurso Ciclo de estudos",
+          stop: "REGRA DE INTEGRAÇÃO",
+          title: "Ferramentas importantes que ficaram fora da disputa",
+          headers: ["Recurso", "Pode ajudar a…", "Não garante…"],
+          rows: [
+            ["Ciclo de estudos", "Distribuir disciplinas e retomar após interrupções", "Prioridade correta ou retenção"],
+            ["Cronograma", "Visualizar prazos, volume e entregas", "Execução realista ou aprendizagem"],
+            ["Pomodoro", "Iniciar, limitar distração e criar pausas", "Que a atividade escolhida seja eficaz"],
+            ["Timeboxing", "Reservar blocos e impedir expansão de tarefas", "Qualidade cognitiva dentro do bloco"],
+            ["Meta de horas", "Monitorar investimento de tempo", "Domínio, acertos ou transferência"],
+            ["Música", "Regular ambiente e sensação de esforço", "Mais compreensão; letras podem competir com leitura"],
+            ["Inteligência artificial", "Criar perguntas, exemplos e feedback preliminar", "Precisão, fonte oficial ou julgamento pedagógico"],
+            ["PDF, livro ou vídeo", "Entregar explicações e exemplos", "Recuperação e aplicação sem ação do aluno"],
+          ],
+        });
+
+        rebuildBrokenTable({
+          start: "Exemplo de leitura do ranking",
+          marker: "Situação Conteúdo totalmente novo",
+          stop: "Limites e compromissos editoriais",
+          title: "Exemplo de leitura do ranking",
+          headers: ["Situação", "Escolha inicial", "Evolução recomendada"],
+          rows: [
+            ["Conteúdo totalmente novo e complexo", "Explicação clara + exemplo resolvido", "Retirar apoio e resolver"],
+            ["Conteúdo compreendido, mas esquecido", "Recuperação + feedback", "Espaçar novas tentativas"],
+            ["Erros entre categorias semelhantes", "Intercalação + comparação", "Registrar critérios de distinção"],
+            ["Muitos erros recorrentes", "Caderno de erros acionável", "Refazer até corrigir o mecanismo"],
+            ["Prova próxima", "Simulado diagnóstico", "Revisão seletiva por erros e incidência"],
+          ],
+        });
       })();
     </script>
   </body>
