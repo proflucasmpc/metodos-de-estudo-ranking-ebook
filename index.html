@@ -789,6 +789,39 @@
       .rebuilt-table tr:nth-child(even) td {
         background: #f7f9fc;
       }
+      .decision-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 14px;
+        margin: 1.2rem 0 1.8rem;
+      }
+      .decision-card {
+        padding: 17px 18px;
+        border: 1px solid #dce3ec;
+        border-radius: 14px;
+        background: linear-gradient(145deg, #fff, #f6f8fb);
+        box-shadow: 0 8px 22px rgba(7, 27, 57, .07);
+      }
+      .decision-card::before {
+        content: "";
+        display: block;
+        width: 34px;
+        height: 3px;
+        margin-bottom: 12px;
+        border-radius: 4px;
+        background: #e8af24;
+      }
+      .decision-card.avoid::before { background: #db655e; }
+      .decision-card.transform::before { background: #2b9b74; }
+      .decision-card strong {
+        display: block;
+        margin-bottom: 7px;
+        color: #0a2a55;
+        font-size: .78rem;
+        letter-spacing: .07em;
+        text-transform: uppercase;
+      }
+      .decision-card p { margin: 0 !important; color: #46566c !important; }
     .rebuilt-table .band-pill {
       display: inline-grid;
       place-items: center;
@@ -876,6 +909,7 @@
           overflow-x: auto;
         -webkit-overflow-scrolling: touch;
         }
+        .decision-grid { grid-template-columns: 1fr; gap: 10px; }
         .tools {
           top: 10px;
           right: 10px;
@@ -7852,6 +7886,109 @@
             ["Muitos erros recorrentes", "Caderno de erros acionável", "Refazer até corrigir o mecanismo"],
             ["Prova próxima", "Simulado diagnóstico", "Revisão seletiva por erros e incidência"],
           ],
+        });
+
+        // Fecha o livro com quadros reais, em vez de cabeçalhos e células soltos.
+        const systemBook = document.querySelector("#sistema .book-content");
+        if (systemBook) {
+          const duplicateTitle = [...systemBook.querySelectorAll(":scope > h3")].find(
+            (h) => h.textContent.trim() === "Do ranking ao sistema de estudos",
+          );
+          duplicateTitle?.remove();
+
+          const lead = [...systemBook.querySelectorAll(":scope > p")].find((p) =>
+            p.textContent.includes("O ranking termina"),
+          );
+          if (lead) {
+            lead.textContent = lead.textContent.replace(/\s*Função\s*$/, "").trim();
+            let cursor = lead.nextElementSibling;
+            const fragments = [];
+            while (cursor && !(cursor.matches("h3") && cursor.textContent.includes("Plano mínimo semanal"))) {
+              fragments.push(cursor);
+              cursor = cursor.nextElementSibling;
+            }
+            fragments.forEach((el) => el.remove());
+            lead.after(makeTable(
+              ["Função", "Escolha central", "Produto"],
+              [
+                ["Compreender", "Explicação curta e exemplo", "Modelo mental inicial"],
+                ["Recuperar", "Perguntas sem consulta", "Resposta produzida"],
+                ["Aplicar", "Questões e problemas", "Decisão e procedimento"],
+                ["Corrigir", "Análise de erros", "Causa e ação"],
+                ["Manter", "Prática espaçada", "Nova tentativa futura"],
+                ["Integrar", "Simulado com análise", "Diagnóstico global"],
+              ],
+            ));
+          }
+
+          const weeklyTitle = [...systemBook.querySelectorAll(":scope > h3")].find((h) =>
+            h.textContent.includes("Plano mínimo semanal"),
+          );
+          if (weeklyTitle) {
+            let cursor = weeklyTitle.nextElementSibling;
+            const fragments = [];
+            while (cursor && !(cursor.matches("h3") && cursor.textContent.includes("Plano de 30 dias"))) {
+              fragments.push(cursor);
+              cursor = cursor.nextElementSibling;
+            }
+            fragments.forEach((el) => el.remove());
+            weeklyTitle.after(makeTable(
+              ["Momento", "Ação"],
+              [
+                ["Início de cada sessão", "Recuperar conteúdo anterior por 5 a 10 minutos"],
+                ["Bloco principal", "Compreender e aplicar o conteúdo prioritário"],
+                ["Fim da sessão", "Corrigir erros e definir retornos"],
+                ["Uma vez por semana", "Revisão cumulativa por questões"],
+                ["Periodicamente", "Simulado com análise e ajuste do plano"],
+              ],
+            ));
+          }
+        }
+
+        // Nos métodos contextuais, recompõe “use / evite / transforme” a partir
+        // do próprio texto editorial e elimina os fragmentos desalinhados do PDF.
+        document.querySelectorAll(".method .book-content").forEach((book) => {
+          const paragraphs = [...book.querySelectorAll(":scope > p")];
+          const lead = paragraphs.find((p) =>
+            p.textContent.includes("Seu melhor uso é") &&
+            p.textContent.includes("Aplicação responsável:") &&
+            p.textContent.includes("O limite aparece"),
+          );
+          if (!lead) return;
+          const raw = lead.textContent.replace(/\s+/g, " ").trim();
+          const use = raw.match(/Seu melhor uso é (.+?)\. Aplicação responsável:/i)?.[1];
+          const transform = raw.match(/Aplicação responsável: (.+?)\. (?:O limite aparece|Para elevar)/i)?.[1];
+          const avoid = raw.match(/O limite aparece (?:ao|quando) (.+?)\. Para elevar/i)?.[1];
+          if (!use || !transform || !avoid) return;
+
+          lead.textContent = raw.replace(/\s*Use quando\s*$/i, "");
+          let cursor = lead.nextElementSibling;
+          const fragments = [];
+          while (cursor && !cursor.matches("h3")) {
+            if (!cursor.matches("p")) break;
+            fragments.push(cursor);
+            cursor = cursor.nextElementSibling;
+          }
+          if (!fragments.some((p) => /Evite quando|Transforme assim/i.test(p.textContent))) return;
+          fragments.forEach((el) => el.remove());
+
+          const grid = document.createElement("div");
+          grid.className = "decision-grid";
+          [
+            ["use", "Use quando", use],
+            ["avoid", "Evite quando", avoid],
+            ["transform", "Transforme assim", transform],
+          ].forEach(([tone, title, value]) => {
+            const card = document.createElement("div");
+            card.className = `decision-card ${tone}`;
+            const heading = document.createElement("strong");
+            heading.textContent = title;
+            const body = document.createElement("p");
+            body.textContent = value;
+            card.append(heading, body);
+            grid.appendChild(card);
+          });
+          lead.after(grid);
         });
       })();
     </script>
