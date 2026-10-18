@@ -7949,10 +7949,11 @@
         // do próprio texto editorial e elimina os fragmentos desalinhados do PDF.
         document.querySelectorAll(".method .book-content").forEach((book) => {
           const paragraphs = [...book.querySelectorAll(":scope > p")];
-          const lead = paragraphs.find((p) =>
-            p.textContent.includes("Seu melhor uso é") &&
-            p.textContent.includes("Aplicação responsável:"),
-          );
+          const lead = paragraphs.find((p) => {
+            const normalized = p.textContent.replace(/\s+/g, " ");
+            return normalized.includes("Seu melhor uso é") &&
+              normalized.includes("Aplicação responsável:");
+          });
           if (!lead) return;
           const raw = lead.textContent.replace(/\s+/g, " ").trim();
           const use = raw.match(/Seu melhor uso é (.+?)\. Aplicação responsável:/i)?.[1];
@@ -7964,8 +7965,7 @@
           let cursor = lead.nextElementSibling;
           const fragments = [];
           while (cursor && !cursor.matches("h3")) {
-            if (!cursor.matches("p")) break;
-            fragments.push(cursor);
+            if (cursor.matches("p")) fragments.push(cursor);
             cursor = cursor.nextElementSibling;
           }
           if (!fragments.some((p) => /Evite quando|Transforme assim/i.test(p.textContent))) return;
