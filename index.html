@@ -7951,8 +7951,7 @@
           const paragraphs = [...book.querySelectorAll(":scope > p")];
           const lead = paragraphs.find((p) =>
             p.textContent.includes("Seu melhor uso é") &&
-            p.textContent.includes("Aplicação responsável:") &&
-            p.textContent.includes("O limite aparece"),
+            p.textContent.includes("Aplicação responsável:"),
           );
           if (!lead) return;
           const raw = lead.textContent.replace(/\s+/g, " ").trim();
