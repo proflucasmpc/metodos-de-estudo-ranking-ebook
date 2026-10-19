@@ -1224,6 +1224,56 @@
         font-size: .7rem;
         text-align: center;
       }
+
+      .method-audio {
+        margin: 0 0 1.5rem;
+        padding: 1rem 1.1rem;
+        border: 1px solid rgba(214, 169, 40, 0.3);
+        border-radius: 16px;
+        background: linear-gradient(135deg, rgba(214, 169, 40, 0.1), rgba(255, 255, 255, 0.035));
+        box-shadow: 0 10px 28px rgba(0, 0, 0, 0.18);
+      }
+
+      .method-audio__head {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        margin-bottom: 0.7rem;
+      }
+
+      .method-audio__icon {
+        display: grid;
+        width: 36px;
+        height: 36px;
+        flex: 0 0 36px;
+        place-items: center;
+        border-radius: 50%;
+        color: #081020;
+        background: #d6a928;
+        font-size: 0.84rem;
+      }
+
+      .method-audio__copy strong,
+      .method-audio__copy small {
+        display: block;
+      }
+
+      .method-audio__copy strong {
+        color: #fff;
+        font-size: 0.96rem;
+      }
+
+      .method-audio__copy small {
+        margin-top: 0.12rem;
+        color: rgba(255, 255, 255, 0.65);
+        font-size: 0.78rem;
+      }
+
+      .method-audio audio {
+        display: block;
+        width: 100%;
+        height: 42px;
+      }
       @media (max-width: 650px) {
         .toc-grid {
           grid-template-columns: 1fr;
@@ -8055,6 +8105,40 @@
             grid.appendChild(card);
           });
           lead.after(grid);
+        });
+
+        // Primeira etapa da versão narrada. Só cria o controle quando o
+        // arquivo correspondente já foi validado e publicado no projeto.
+        const narratedMethods = Array.from({ length: 9 }, (_, index) => index + 1);
+        narratedMethods.forEach((rank) => {
+          const method = document.getElementById(`metodo-${rank}`);
+          const body = method?.querySelector(".method-body");
+          if (!body) return;
+
+          const player = document.createElement("div");
+          player.className = "method-audio";
+          player.setAttribute("aria-label", `Narração do método ${rank}`);
+          player.innerHTML = `
+            <div class="method-audio__head">
+              <span class="method-audio__icon" aria-hidden="true">▶</span>
+              <span class="method-audio__copy">
+                <strong>Ouvir este método</strong>
+                <small>Narração por IA · acompanhe no seu ritmo</small>
+              </span>
+            </div>
+            <audio controls preload="metadata">
+              <source src="assets/audio/metodo-${String(rank).padStart(2, "0")}.mp3" type="audio/mpeg" />
+              Seu navegador não oferece suporte ao reprodutor de áudio.
+            </audio>`;
+          body.prepend(player);
+        });
+
+        document.querySelectorAll("audio").forEach((currentAudio) => {
+          currentAudio.addEventListener("play", () => {
+            document.querySelectorAll("audio").forEach((otherAudio) => {
+              if (otherAudio !== currentAudio) otherAudio.pause();
+            });
+          });
         });
       })();
     </script>
